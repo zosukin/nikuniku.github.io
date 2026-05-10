@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>奔跑吧！绿毛虫</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, "Segoe UI", sans-serif;
+      background: #080b10;
+      color: #e6edf3;
+    }
+    h1 {
+      margin: 0 0 0.5rem;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      color: #7ee787;
+      text-shadow: 0 0 24px rgba(63, 185, 80, 0.35);
+    }
+    .hint {
+      margin: 0 0 1rem;
+      font-size: 0.8rem;
+      color: #8b949e;
+      text-align: center;
+      max-width: 28rem;
+      line-height: 1.5;
+    }
+    .bar {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+    .score {
+      font-variant-numeric: tabular-nums;
+      font-size: 1rem;
+    }
+    button {
+      padding: 0.4rem 0.9rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      background: #21262d;
+      color: #e6edf3;
+    }
+    button:hover {
+      background: #30363d;
+    }
+    .game-row {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      gap: 0;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
+    }
+    .wrap {
+      position: relative;
+      flex-shrink: 0;
+      padding: 0;
+    }
+    .side-panel {
+      width: 96px;
+      flex-shrink: 0;
+      background: #0d1117;
+      border-left: 1px solid #30363d;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0.65rem 0.45rem 0.85rem;
+      gap: 0.5rem;
+    }
+    .mascot-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 102px;
+      margin-bottom: 0.15rem;
+    }
+    .pixel-caterpillar {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      transform-origin: 50% 80%;
+      animation: caterpillar-sway 1.35s ease-in-out infinite;
+    }
+    .pixel-caterpillar .crow {
+      display: flex;
+      flex-direction: row;
+      height: 4px;
+    }
+    .pixel-caterpillar .crow-sm {
+      display: flex;
+      flex-direction: row;
+      height: 3px;
+    }
+    .pixel-caterpillar .px {
+      width: 4px;
+      height: 4px;
+      flex-shrink: 0;
+    }
+    .pixel-caterpillar .px3 {
+      width: 3px;
+      height: 3px;
+      flex-shrink: 0;
+    }
+    .pixel-caterpillar .h { background: #2ea043; }
+    .pixel-caterpillar .b { background: #3fb950; }
+    .pixel-caterpillar .l { background: #238636; }
+    .pixel-caterpillar .t { background: #56d364; }
+    .pixel-caterpillar .e { background: #0d1117; }
+    .pixel-caterpillar .o { background: transparent; }
+    .pixel-caterpillar .s1 { background: #2ea043; }
+    .pixel-caterpillar .s2 { background: #238636; }
+    .pixel-caterpillar .s3 { background: #3fb950; }
+    .caterpillar-body {
+      margin-top: 2px;
+    }
+    @keyframes caterpillar-sway {
+      0%, 100% { transform: rotate(-7deg) translateY(0); }
+      50% { transform: rotate(7deg) translateY(-1px); }
+    }
+    .pixel-caterpillar.level-flash {
+      animation: caterpillar-sway 1.35s ease-in-out infinite,
+        caterpillar-blink 0.65s ease-out 1;
+    }
+    @keyframes caterpillar-blink {
+      0% {
+        filter: brightness(1) drop-shadow(0 0 0 transparent);
+      }
+      15% {
+        filter: brightness(2.2) drop-shadow(0 0 12px #7ee787);
+      }
+      40% {
+        filter: brightness(1.4) drop-shadow(0 0 8px #56d364);
+      }
+      100% {
+        filter: brightness(1) drop-shadow(0 0 0 transparent);
+      }
+    }
+    .side-panel .label {
+      font-size: 0.7rem;
+      color: #8b949e;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .side-panel .level-num {
+      font-size: 2rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: #58a6ff;
+      line-height: 1;
+    }
+    canvas {
+      display: block;
+      background: #152238;
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(8, 11, 16, 0.88);
+      text-align: center;
+      padding: 1rem;
+    }
+    .overlay.visible {
+      display: flex;
+    }
+    .overlay h2 {
+      margin: 0 0 0.5rem;
+      font-size: 1.5rem;
+    }
+    .overlay p {
+      margin: 0;
+      color: #8b949e;
+    }
+    .victory-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(ellipse at 50% 40%, #1a3d2e 0%, #080b10 55%, #040508 100%);
+      text-align: center;
+      padding: 1.5rem;
+    }
+    .victory-overlay.visible {
+      display: flex;
+    }
+    .victory-card {
+      max-width: 26rem;
+      animation: victory-pop 0.65s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    @keyframes victory-pop {
+      0% {
+        opacity: 0;
+        transform: scale(0.88) translateY(12px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+    .victory-title {
+      margin: 0 0 1rem;
+      font-size: clamp(2rem, 6vw, 3rem);
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      color: #ffd43b;
+      text-shadow:
+        0 0 20px rgba(255, 212, 59, 0.55),
+        0 0 48px rgba(63, 185, 80, 0.35);
+      animation: victory-glow 1.8s ease-in-out infinite;
+    }
+    @keyframes victory-glow {
+      0%, 100% {
+        filter: brightness(1);
+      }
+      50% {
+        filter: brightness(1.12);
+      }
+    }
+    .victory-art {
+      display: block;
+      margin: 0 auto 1rem;
+      max-width: min(90vw, 360px);
+      height: auto;
+      border-radius: 12px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    .victory-scoreline {
+      margin: 0 0 0.5rem;
+      font-size: 1.05rem;
+      color: #7ee787;
+    }
+    .victory-hint {
+      margin: 0;
+      font-size: 0.85rem;
+      color: #8b949e;
+    }
+  </style>
+</head>
+<body>
+  <h1>奔跑吧！绿毛虫</h1>
+  <p class="hint">
+    操作：<strong>W A S D</strong> 移动，<strong>R</strong> 重新开始，<strong>空格</strong> 暂停。
+  </p>
+  <div class="bar">
+    <span class="score">得分：<span id="score">0</span></span>
+    <button type="button" id="restart">重新开始</button>
+  </div>
+  <div class="game-row">
+    <div class="wrap">
+      <canvas id="game" width="828" height="828" aria-label="奔跑吧绿毛虫游戏区域"></canvas>
+      <div class="overlay" id="overlay" role="dialog" aria-labelledby="overlay-title">
+        <h2 id="overlay-title">游戏结束</h2>
+        <p>最终得分：<span id="final-score">0</span></p>
+        <p style="margin-top:0.75rem">按 R 或点击「重新开始」</p>
+      </div>
+    </div>
+    <aside class="side-panel" aria-live="polite">
+      <div class="mascot-slot">
+        <div class="pixel-caterpillar" id="pixelCaterpillar" aria-hidden="true">
+          <div class="crow">
+            <span class="px o"></span><span class="px o"></span><span class="px h"></span><span class="px h"></span><span class="px h"></span><span class="px o"></span><span class="px o"></span>
+          </div>
+          <div class="crow">
+            <span class="px o"></span><span class="px h"></span><span class="px b"></span><span class="px e"></span><span class="px b"></span><span class="px h"></span><span class="px o"></span>
+          </div>
+          <div class="crow">
+            <span class="px h"></span><span class="px b"></span><span class="px b"></span><span class="px b"></span><span class="px b"></span><span class="px b"></span><span class="px h"></span>
+          </div>
+          <div class="crow">
+            <span class="px o"></span><span class="px l"></span><span class="px b"></span><span class="px b"></span><span class="px b"></span><span class="px l"></span><span class="px o"></span>
+          </div>
+          <div class="crow">
+            <span class="px o"></span><span class="px o"></span><span class="px l"></span><span class="px b"></span><span class="px l"></span><span class="px o"></span><span class="px o"></span>
+          </div>
+          <div class="crow">
+            <span class="px o"></span><span class="px o"></span><span class="px o"></span><span class="px t"></span><span class="px t"></span><span class="px o"></span><span class="px o"></span>
+          </div>
+          <div class="caterpillar-body" aria-hidden="true">
+            <div class="crow-sm">
+              <span class="px3 o"></span><span class="px3 o"></span><span class="px3 s1"></span><span class="px3 s2"></span><span class="px3 s1"></span><span class="px3 o"></span><span class="px3 o"></span>
+            </div>
+            <div class="crow-sm">
+              <span class="px3 o"></span><span class="px3 s3"></span><span class="px3 s2"></span><span class="px3 s3"></span><span class="px3 s2"></span><span class="px3 o"></span><span class="px3 o"></span>
+            </div>
+            <div class="crow-sm">
+              <span class="px3 o"></span><span class="px3 o"></span><span class="px3 s2"></span><span class="px3 s1"></span><span class="px3 t"></span><span class="px3 o"></span><span class="px3 o"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <span class="label">Level</span>
+      <span class="level-num" id="level">1</span>
+    </aside>
+  </div>
+
+  <div
+    id="victory-overlay"
+    class="victory-overlay"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="victory-title"
+    aria-hidden="true"
+  >
+    <div class="victory-card">
+      <p id="victory-title" class="victory-title">VICTORY</p>
+      <img
+        class="victory-art"
+        src="victory.jpg"
+        width="360"
+        height="360"
+        alt="通关庆祝：可爱像素绿毛虫"
+      />
+      <p class="victory-scoreline">
+        得分 <span id="victory-score">200</span> · 恭喜通关！
+      </p>
+      <p class="victory-hint">按 <strong>R</strong> 或点击「重新开始」再来一局</p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const COLS = 40;
+      const ROWS = 40;
+      const BASE_TICK_MS = 120;
+      const BASE_BGM_MS = 168;
+      /** 每升一级：步进间隔 × (15/16)，即速度约加快 1/16 */
+      const SPEED_FACTOR = 15 / 16;
+      const FOODS_PER_STAGE = 6;
+      const OBSTACLE_EVERY = 3;
+      const PLAYER_CLEAR_CHEBYSHEV = 10;
+      const BOSS_LEN = 4;
+      /** 首次分数阈值各生成一条；高分波次可重复同类型 */
+      const BOSS1_SCORE = 8;
+      const BOSS2_SCORE = 18;
+      const BOSS3_SCORE = 30;
+      const BOSS4_SCORE = 40;
+      const BOSS4_STEP_FRAC = 0.75;
+      const BOSS4_FOOD_NEAR = 3;
+      const WAVE_55 = 55;
+      const WAVE_70 = 70;
+      const WAVE_90 = 90;
+      const WAVE_110 = 110;
+      const WAVE_140 = 140;
+      const VICTORY_SCORE = 200;
+
+      const BOSS_COLORS = {
+        1: { head: "#a371f7", body: "#8957e5" },
+        2: { head: "#f0883e", body: "#c4621a" },
+        3: { head: "#58a6ff", body: "#1f6feb" },
+        4: { head: "#c92a2a", body: "#621e1e" },
+      };
+
+      const INNER_PX = 800;
+      const OUTER_MARGIN = 10;
+      const BORDER_W = 4;
+      const GRID_OFF = OUTER_MARGIN + BORDER_W;
+      const CANVAS_TOTAL = OUTER_MARGIN * 2 + BORDER_W * 2 + INNER_PX;
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const scoreEl = document.getElementById("score");
+      const levelEl = document.getElementById("level");
+      const finalScoreEl = document.getElementById("final-score");
+      const overlay = document.getElementById("overlay");
+      const restartBtn = document.getElementById("restart");
+      const pixelCaterpillar = document.getElementById("pixelCaterpillar");
+      const victoryOverlay = document.getElementById("victory-overlay");
+      const victoryScoreEl = document.getElementById("victory-score");
+
+      canvas.width = CANVAS_TOTAL;
+      canvas.height = CANVAS_TOTAL;
+      const cellW = INNER_PX / COLS;
+      const cellH = INNER_PX / ROWS;
+
+      let snake;
+      let dir;
+      let nextDir;
+      let foods = new Set();
+      let yellowFoods = new Set();
+      let score;
+      let alive;
+      let paused = false;
+      let acc = 0;
+      let lastTs = 0;
+      let rafId = 0;
+      let obstacles = new Set();
+      let bosses = [];
+      let obstacleWave = 0;
+      let won = false;
+
+      const opposite = {
+        up: "down",
+        down: "up",
+        left: "right",
+        right: "left",
+      };
+
+      const ACtx = window.AudioContext || window.webkitAudioContext;
+      let audioCtx = null;
+      let bgmTimer = null;
+      let failBgmTimer = null;
+      let bgmStep = 0;
+      let failBgmStep = 0;
+
+      function keyStr(x, y) {
+        return x + "," + y;
+      }
+
+      function vecFromDir(d) {
+        return (
+          {
+            up: { x: 0, y: -1 },
+            down: { x: 0, y: 1 },
+            left: { x: -1, y: 0 },
+            right: { x: 1, y: 0 },
+          }[d] || { x: 0, y: 0 }
+        );
+      }
+
+      function dirFromVec(vx, vy) {
+        if (vx === 1) return "right";
+        if (vx === -1) return "left";
+        if (vy === 1) return "down";
+        if (vy === -1) return "up";
+        return "right";
+      }
+
+      function chebyshev(ax, ay, bx, by) {
+        return Math.max(Math.abs(ax - bx), Math.abs(ay - by));
+      }
+
+      function manhattan(ax, ay, bx, by) {
+        return Math.abs(ax - bx) + Math.abs(ay - by);
+      }
+
+      function getLevel(s) {
+        if (s <= 0) return 1;
+        return Math.floor((s - 1) / FOODS_PER_STAGE) + 1;
+      }
+
+      /** Level 3–5: 1/3；6–8: 1/2；9–11: 2/3；12+: 100% */
+      function yellowSpawnProbability(lv) {
+        if (lv < 3) return 0;
+        if (lv >= 12) return 1;
+        if (lv >= 9) return 2 / 3;
+        if (lv >= 6) return 1 / 2;
+        return 1 / 3;
+      }
+
+      function maybeSpawnYellow() {
+        if (!alive) return;
+        const lv = getLevel(score);
+        if (lv < 3) return;
+        if (yellowFoods.size >= 1) return;
+        if (Math.random() >= yellowSpawnProbability(lv)) return;
+        const c = emptyCell();
+        if (c) yellowFoods.add(keyStr(c.x, c.y));
+      }
+
+      function stageMultiplier(level) {
+        return Math.pow(SPEED_FACTOR, level - 1);
+      }
+
+      function tickMsNow() {
+        return BASE_TICK_MS * stageMultiplier(getLevel(score));
+      }
+
+      function bgmIntervalMsNow() {
+        return BASE_BGM_MS * stageMultiplier(getLevel(score));
+      }
+
+      function triggerCaterpillarFlash() {
+        if (!pixelCaterpillar) return;
+        pixelCaterpillar.classList.remove("level-flash");
+        void pixelCaterpillar.offsetWidth;
+        pixelCaterpillar.classList.add("level-flash");
+        setTimeout(function () {
+          pixelCaterpillar.classList.remove("level-flash");
+        }, 700);
+      }
+
+      function initAudio() {
+        if (!ACtx || audioCtx) return;
+        audioCtx = new ACtx();
+      }
+
+      function resumeAudio() {
+        initAudio();
+        if (audioCtx && audioCtx.state === "suspended") {
+          audioCtx.resume();
+        }
+      }
+
+      function chipTone(freq, duration, type, peakGain) {
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t);
+        const v = Math.max(0.0001, peakGain);
+        g.gain.setValueAtTime(v, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t + duration + 0.03);
+      }
+
+      function playEat() {
+        chipTone(990, 0.055, "square", 0.1);
+        setTimeout(function () {
+          chipTone(1320, 0.045, "square", 0.075);
+        }, 35);
+      }
+
+      function playReward() {
+        chipTone(523, 0.06, "square", 0.09);
+        setTimeout(function () {
+          chipTone(659, 0.06, "square", 0.09);
+        }, 55);
+        setTimeout(function () {
+          chipTone(784, 0.1, "square", 0.085);
+        }, 110);
+      }
+
+      function playUpgrade() {
+        chipTone(440, 0.07, "square", 0.1);
+        setTimeout(function () {
+          chipTone(554, 0.07, "square", 0.1);
+        }, 70);
+        setTimeout(function () {
+          chipTone(659, 0.12, "square", 0.11);
+        }, 140);
+        setTimeout(function () {
+          chipTone(880, 0.15, "square", 0.09);
+        }, 220);
+      }
+
+      function playDie() {
+        chipTone(280, 0.12, "sawtooth", 0.09);
+        setTimeout(function () {
+          chipTone(180, 0.16, "sawtooth", 0.08);
+        }, 80);
+        setTimeout(function () {
+          chipTone(110, 0.22, "square", 0.07);
+        }, 180);
+      }
+
+      function playVictoryFanfare() {
+        initAudio();
+        if (!audioCtx) return;
+        const seq = [
+          { f: 523.25, d: 0.12, g: 0.09, t: "square" },
+          { f: 659.25, d: 0.12, g: 0.095, t: "square" },
+          { f: 783.99, d: 0.14, g: 0.1, t: "square" },
+          { f: 1046.5, d: 0.18, g: 0.11, t: "square" },
+          { f: 783.99, d: 0.12, g: 0.085, t: "triangle" },
+          { f: 1046.5, d: 0.22, g: 0.1, t: "square" },
+          { f: 1318.51, d: 0.35, g: 0.09, t: "triangle" },
+        ];
+        let delay = 0;
+        for (let i = 0; i < seq.length; i++) {
+          const n = seq[i];
+          (function (note, ms) {
+            setTimeout(function () {
+              if (!audioCtx) return;
+              chipTone(note.f, note.d, note.t, note.g);
+            }, ms);
+          })(n, delay);
+          delay += Math.round(n.d * 1000) + 45;
+        }
+      }
+
+      function stopMainBGM() {
+        if (bgmTimer !== null) {
+          clearInterval(bgmTimer);
+          bgmTimer = null;
+        }
+      }
+
+      function stopFailBGM() {
+        if (failBgmTimer !== null) {
+          clearInterval(failBgmTimer);
+          failBgmTimer = null;
+        }
+      }
+
+      function bgmTick() {
+        if (!audioCtx || !alive || paused) return;
+        const t = audioCtx.currentTime;
+        const lv = getLevel(score);
+        const beat = bgmIntervalMsNow() / 1000;
+        const pat = [
+          [392, 0.11],
+          [523, 0.11],
+          [659, 0.11],
+          [523, 0.11],
+          [330, 0.11],
+          [494, 0.11],
+          [587, 0.11],
+          [440, 0.11],
+        ];
+        const [freq, dur] = pat[bgmStep % pat.length];
+        bgmStep++;
+        const noteDur = Math.min(dur, beat * 0.72);
+
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = lv === 1 ? "triangle" : "square";
+        osc.frequency.setValueAtTime(freq, t);
+        const vol = lv === 1 ? 0.034 : 0.042;
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + noteDur);
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t + noteDur + 0.02);
+      }
+
+      function failBgmTick() {
+        if (!audioCtx) return;
+        const t = audioCtx.currentTime;
+        const stepSec = 0.38;
+        const pat = [
+          [196, 0.28],
+          [174.61, 0.28],
+          [155.56, 0.32],
+          [174.61, 0.26],
+        ];
+        const [freq, dur] = pat[failBgmStep % pat.length];
+        failBgmStep++;
+        const noteDur = Math.min(dur, stepSec * 0.75);
+
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(0.045, t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + noteDur);
+        osc.connect(g);
+        g.connect(audioCtx.destination);
+        osc.start(t);
+        osc.stop(t + noteDur + 0.02);
+      }
+
+      function restartMainBGM() {
+        stopMainBGM();
+        if (!audioCtx || !alive || paused) return;
+        const ms = bgmIntervalMsNow();
+        bgmTimer = setInterval(bgmTick, ms);
+      }
+
+      function startFailBGM() {
+        stopFailBGM();
+        if (!audioCtx) return;
+        failBgmStep = 0;
+        failBgmTimer = setInterval(failBgmTick, 380);
+      }
+
+      function syncBgmToLevel() {
+        if (!alive || paused) return;
+        stopMainBGM();
+        const ms = bgmIntervalMsNow();
+        bgmTimer = setInterval(bgmTick, ms);
+      }
+
+      function randInt(max) {
+        return Math.floor(Math.random() * max);
+      }
+
+      function addBossCellsToOcc(o) {
+        for (let b = 0; b < bosses.length; b++) {
+          const segs = bosses[b].segments;
+          for (let i = 0; i < segs.length; i++) {
+            o.add(keyStr(segs[i].x, segs[i].y));
+          }
+        }
+      }
+
+      function occupiedKeys() {
+        const o = new Set();
+        for (let i = 0; i < snake.length; i++) {
+          o.add(keyStr(snake[i].x, snake[i].y));
+        }
+        obstacles.forEach(function (k) {
+          o.add(k);
+        });
+        foods.forEach(function (k) {
+          o.add(k);
+        });
+        yellowFoods.forEach(function (k) {
+          o.add(k);
+        });
+        addBossCellsToOcc(o);
+        return o;
+      }
+
+      function emptyCell() {
+        const occ = occupiedKeys();
+        const free = [];
+        for (let y = 0; y < ROWS; y++) {
+          for (let x = 0; x < COLS; x++) {
+            const k = keyStr(x, y);
+            if (!occ.has(k)) free.push({ x, y });
+          }
+        }
+        if (free.length === 0) return null;
+        return free[randInt(free.length)];
+      }
+
+      function addObstacle() {
+        const cell = emptyCell();
+        if (cell) obstacles.add(keyStr(cell.x, cell.y));
+      }
+
+      function addObstacleBatch(n) {
+        for (let i = 0; i < n; i++) {
+          addObstacle();
+        }
+      }
+
+      function ensureMinFood() {
+        if (foods.size > 0) return;
+        const c = emptyCell();
+        if (c) foods.add(keyStr(c.x, c.y));
+      }
+
+      function addFoodAtRandomEmpty() {
+        const c = emptyCell();
+        if (c) foods.add(keyStr(c.x, c.y));
+      }
+
+      function farFromPlayer(segments) {
+        for (let i = 0; i < segments.length; i++) {
+          const s = segments[i];
+          for (let j = 0; j < snake.length; j++) {
+            const p = snake[j];
+            if (chebyshev(s.x, s.y, p.x, p.y) <= PLAYER_CLEAR_CHEBYSHEV) {
+              return false;
+            }
+          }
+        }
+        return true;
+      }
+
+      function bossSegmentsFit(segments) {
+        const occ = occupiedKeys();
+        for (let i = 0; i < segments.length; i++) {
+          const s = segments[i];
+          if (occ.has(keyStr(s.x, s.y))) return false;
+        }
+        return true;
+      }
+
+      function cloneBossSegments(segs) {
+        const out = [];
+        for (let i = 0; i < segs.length; i++) {
+          out.push({ x: segs[i].x, y: segs[i].y });
+        }
+        return out;
+      }
+
+      function hasBossType(t) {
+        for (let i = 0; i < bosses.length; i++) {
+          if (bosses[i].type === t) return true;
+        }
+        return false;
+      }
+
+      function spawnBossOfType(type, allowDuplicate) {
+        if (!allowDuplicate && hasBossType(type)) return;
+        const orients = [
+          { dx: 1, dy: 0 },
+          { dx: -1, dy: 0 },
+          { dx: 0, dy: 1 },
+          { dx: 0, dy: -1 },
+        ];
+        for (let attempt = 0; attempt < 500; attempt++) {
+          const o = orients[randInt(4)];
+          const bx = randInt(COLS);
+          const by = randInt(ROWS);
+          const segs = [];
+          let ok = true;
+          for (let k = 0; k < BOSS_LEN; k++) {
+            const x = bx + o.dx * k;
+            const y = by + o.dy * k;
+            if (x < 0 || x >= COLS || y < 0 || y >= ROWS) {
+              ok = false;
+              break;
+            }
+            segs.push({ x, y });
+          }
+          if (!ok) continue;
+          segs.reverse();
+          if (!bossSegmentsFit(segs)) continue;
+          if (!farFromPlayer(segs)) continue;
+          const d = dirFromVec(o.dx, o.dy);
+          bosses.push({
+            segments: segs,
+            dir: d,
+            type: type,
+            moveAcc: 0,
+          });
+          return;
+        }
+      }
+
+      function trySpawnBossMilestones(prevScore, newScore) {
+        if (prevScore < BOSS1_SCORE && newScore >= BOSS1_SCORE) spawnBossOfType(1);
+        if (prevScore < BOSS2_SCORE && newScore >= BOSS2_SCORE) spawnBossOfType(2);
+        if (prevScore < BOSS3_SCORE && newScore >= BOSS3_SCORE) spawnBossOfType(3);
+        if (prevScore < BOSS4_SCORE && newScore >= BOSS4_SCORE) spawnBossOfType(4);
+      }
+
+      /** 高分波次：允许同类型重复出现 */
+      function trySpawnBossWaveMilestones(prevScore, newScore) {
+        if (prevScore < WAVE_55 && newScore >= WAVE_55) {
+          spawnBossOfType(1, true);
+          spawnBossOfType(2, true);
+        }
+        if (prevScore < WAVE_70 && newScore >= WAVE_70) {
+          spawnBossOfType(1, true);
+          spawnBossOfType(3, true);
+        }
+        if (prevScore < WAVE_90 && newScore >= WAVE_90) {
+          spawnBossOfType(1, true);
+          spawnBossOfType(4, true);
+        }
+        if (prevScore < WAVE_110 && newScore >= WAVE_110) {
+          spawnBossOfType(1, true);
+          spawnBossOfType(2, true);
+          spawnBossOfType(3, true);
+        }
+        if (prevScore < WAVE_140 && newScore >= WAVE_140) {
+          spawnBossOfType(1, true);
+          spawnBossOfType(3, true);
+          spawnBossOfType(4, true);
+        }
+      }
+
+      function foodsToArray() {
+        const arr = [];
+        foods.forEach(function (k) {
+          const p = k.split(",");
+          arr.push([+p[0], +p[1]]);
+        });
+        return arr;
+      }
+
+      function allFoodCoordsForBoss() {
+        const arr = foodsToArray();
+        yellowFoods.forEach(function (k) {
+          const p = k.split(",");
+          arr.push([+p[0], +p[1]]);
+        });
+        return arr;
+      }
+
+      function validBossDirs(boss, blocked) {
+        const head = boss.segments[0];
+        const tail = boss.segments[boss.segments.length - 1];
+        const out = [];
+        const dirs = ["up", "down", "left", "right"];
+        for (let i = 0; i < dirs.length; i++) {
+          const d = dirs[i];
+          if (opposite[d] === boss.dir) continue;
+          const v = vecFromDir(d);
+          const nx = head.x + v.x;
+          const ny = head.y + v.y;
+          if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+          if (obstacles.has(keyStr(nx, ny))) continue;
+          let hitSelf = false;
+          for (let s = 0; s < boss.segments.length; s++) {
+            const c = boss.segments[s];
+            if (s === boss.segments.length - 1 && nx === tail.x && ny === tail.y) {
+              continue;
+            }
+            if (c.x === nx && c.y === ny) {
+              hitSelf = true;
+              break;
+            }
+          }
+          if (hitSelf) continue;
+          if (blocked.has(keyStr(nx, ny))) continue;
+          out.push(d);
+        }
+        return out;
+      }
+
+      function minChebToSnake(nx, ny) {
+        let m = Infinity;
+        for (let j = 0; j < snake.length; j++) {
+          const p = snake[j];
+          const d = chebyshev(nx, ny, p.x, p.y);
+          if (d < m) m = d;
+        }
+        return m;
+      }
+
+      function minManhattanToAnyFood(nx, ny, foodsList) {
+        if (foodsList.length === 0) return 0;
+        let best = Infinity;
+        for (let f = 0; f < foodsList.length; f++) {
+          const fx = foodsList[f][0];
+          const fy = foodsList[f][1];
+          const dist = manhattan(nx, ny, fx, fy);
+          if (dist < best) best = dist;
+        }
+        return best;
+      }
+
+      /** boss1 紫：先保安全（与玩家至少 2 格），再吃食 */
+      function pickBoss1Dir(boss, dirs, foodsList) {
+        if (dirs.length === 0) return null;
+        const head = boss.segments[0];
+        const opts = [];
+        for (let i = 0; i < dirs.length; i++) {
+          const d = dirs[i];
+          const v = vecFromDir(d);
+          const nx = head.x + v.x;
+          const ny = head.y + v.y;
+          const minSn = minChebToSnake(nx, ny);
+          const foodDist = minManhattanToAnyFood(nx, ny, foodsList);
+          opts.push({ d: d, minSn: minSn, foodDist: foodDist });
+        }
+        const safe = opts.filter(function (o) {
+          return o.minSn >= 2;
+        });
+        const pool = safe.length ? safe : opts;
+        let bestFd = Infinity;
+        for (let p = 0; p < pool.length; p++) {
+          if (pool[p].foodDist < bestFd) bestFd = pool[p].foodDist;
+        }
+        const fdCand = pool.filter(function (o) {
+          return o.foodDist === bestFd;
+        });
+        if (safe.length) {
+          let bestSn = -1;
+          for (let p = 0; p < fdCand.length; p++) {
+            if (fdCand[p].minSn > bestSn) bestSn = fdCand[p].minSn;
+          }
+          const finalCand = fdCand.filter(function (o) {
+            return o.minSn === bestSn;
+          });
+          return finalCand[randInt(finalCand.length)].d;
+        }
+        let bestSn2 = -1;
+        for (let p = 0; p < fdCand.length; p++) {
+          if (fdCand[p].minSn > bestSn2) bestSn2 = fdCand[p].minSn;
+        }
+        const final2 = fdCand.filter(function (o) {
+          return o.minSn === bestSn2;
+        });
+        return final2[randInt(final2.length)].d;
+      }
+
+      /** boss2 橙：距离×权重，黄 1/2、红 1，数值小优先，平手随机 */
+      function pickBoss2Dir(boss, dirs) {
+        if (dirs.length === 0) return null;
+        const head = boss.segments[0];
+        const reds = foodsToArray();
+        const yellows = [];
+        yellowFoods.forEach(function (k) {
+          const p = k.split(",");
+          yellows.push([+p[0], +p[1]]);
+        });
+        function cellMetric(nx, ny) {
+          let best = Infinity;
+          let ri;
+          for (ri = 0; ri < reds.length; ri++) {
+            const fx = reds[ri][0];
+            const fy = reds[ri][1];
+            const v = manhattan(nx, ny, fx, fy) * 1;
+            if (v < best) best = v;
+          }
+          for (ri = 0; ri < yellows.length; ri++) {
+            const fx = yellows[ri][0];
+            const fy = yellows[ri][1];
+            const v = manhattan(nx, ny, fx, fy) * 0.5;
+            if (v < best) best = v;
+          }
+          if (reds.length === 0 && yellows.length === 0) return 0;
+          return best;
+        }
+        const scored = [];
+        for (let i = 0; i < dirs.length; i++) {
+          const d = dirs[i];
+          const v = vecFromDir(d);
+          const nx = head.x + v.x;
+          const ny = head.y + v.y;
+          scored.push({ d: d, m: cellMetric(nx, ny) });
+        }
+        let bestM = Infinity;
+        for (let s = 0; s < scored.length; s++) {
+          if (scored[s].m < bestM) bestM = scored[s].m;
+        }
+        const cand = scored.filter(function (x) {
+          return x.m === bestM;
+        });
+        return cand[randInt(cand.length)].d;
+      }
+
+      /** boss3 蓝：吃食为主，更随机并兼顾自保 */
+      function pickBoss3Dir(boss, dirs, foodsList) {
+        if (dirs.length === 0) return null;
+        const head = boss.segments[0];
+        const scored = [];
+        for (let i = 0; i < dirs.length; i++) {
+          const d = dirs[i];
+          const v = vecFromDir(d);
+          const nx = head.x + v.x;
+          const ny = head.y + v.y;
+          const foodDist = minManhattanToAnyFood(nx, ny, foodsList);
+          const minSn = minChebToSnake(nx, ny);
+          let cost = foodDist + (Math.random() - 0.5) * 5.5;
+          if (minSn <= 1) cost += 18;
+          else if (minSn === 2) cost += 3.5;
+          cost += (Math.random() - 0.5) * 2;
+          scored.push({ d: d, cost: cost });
+        }
+        scored.sort(function (a, b) {
+          return a.cost - b.cost;
+        });
+        const r = Math.random();
+        if (r < 0.45) return scored[0].d;
+        if (r < 0.72 && scored.length > 1) return scored[1].d;
+        if (scored.length > 2) return scored[2].d;
+        return scored[0].d;
+      }
+
+      function minChebHeadToNearestFood(hx, hy) {
+        let m = Infinity;
+        foods.forEach(function (k) {
+          const p = k.split(",");
+          const d = chebyshev(hx, hy, +p[0], +p[1]);
+          if (d < m) m = d;
+        });
+        yellowFoods.forEach(function (k) {
+          const p = k.split(",");
+          const d = chebyshev(hx, hy, +p[0], +p[1]);
+          if (d < m) m = d;
+        });
+        return m;
+      }
+
+      /** boss4：头部与任意食物切比雪夫距离小于 3 时，优先按 boss2 规则吃豆，否则追杀玩家 */
+      function pickBoss4Dir(boss, dirs) {
+        if (dirs.length === 0) return null;
+        const head = boss.segments[0];
+        if (minChebHeadToNearestFood(head.x, head.y) < BOSS4_FOOD_NEAR) {
+          return pickBoss2Dir(boss, dirs);
+        }
+        const ph = snake[0];
+        const scored = [];
+        for (let i = 0; i < dirs.length; i++) {
+          const d = dirs[i];
+          const v = vecFromDir(d);
+          const nx = head.x + v.x;
+          const ny = head.y + v.y;
+          const dist = manhattan(nx, ny, ph.x, ph.y);
+          scored.push({ d: d, cost: dist + (Math.random() - 0.5) * 1.8 });
+        }
+        scored.sort(function (a, b) {
+          return a.cost - b.cost;
+        });
+        return scored[0].d;
+      }
+
+      function pickBossDir(boss, dirs, foodsList) {
+        if (dirs.length === 0) return null;
+        const t = boss.type || 1;
+        if (t === 1) return pickBoss1Dir(boss, dirs, foodsList);
+        if (t === 2) return pickBoss2Dir(boss, dirs);
+        if (t === 3) return pickBoss3Dir(boss, dirs, foodsList);
+        if (t === 4) return pickBoss4Dir(boss, dirs);
+        return pickBoss1Dir(boss, dirs, foodsList);
+      }
+
+      function emergencyBossDir(boss) {
+        const head = boss.segments[0];
+        const dirs = ["up", "down", "left", "right"];
+        const opts = [];
+        for (let i = 0; i < dirs.length; i++) {
+          const d = dirs[i];
+          if (opposite[d] === boss.dir) continue;
+          const v = vecFromDir(d);
+          const nx = head.x + v.x;
+          const ny = head.y + v.y;
+          if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+          if (obstacles.has(keyStr(nx, ny))) continue;
+          opts.push(d);
+        }
+        if (opts.length === 0) return boss.dir;
+        return opts[randInt(opts.length)];
+      }
+
+      function applyBossDir(boss, d) {
+        const v = vecFromDir(d);
+        const head = boss.segments[0];
+        const nx = head.x + v.x;
+        const ny = head.y + v.y;
+        const k = keyStr(nx, ny);
+        const ateRed = foods.has(k);
+        const ateYellow = yellowFoods.has(k);
+        const newSeg = [{ x: nx, y: ny }].concat(boss.segments);
+        if (!ateRed && !ateYellow) {
+          newSeg.pop();
+        } else if (ateYellow) {
+          const t = newSeg[newSeg.length - 1];
+          newSeg.push({ x: t.x, y: t.y });
+        }
+        return {
+          segments: newSeg,
+          dir: d,
+          ateRed: ateRed,
+          ateYellow: ateYellow,
+        };
+      }
+
+      function updateHud() {
+        scoreEl.textContent = String(score);
+        levelEl.textContent = String(getLevel(score));
+      }
+
+      function triggerVictory() {
+        if (won) return;
+        won = true;
+        paused = false;
+        stopMainBGM();
+        stopFailBGM();
+        playVictoryFanfare();
+        if (victoryScoreEl) victoryScoreEl.textContent = String(score);
+        if (victoryOverlay) {
+          victoryOverlay.classList.add("visible");
+          victoryOverlay.setAttribute("aria-hidden", "false");
+        }
+      }
+
+      function tryVictory(prevScore, newScore) {
+        if (won) return;
+        if (prevScore < VICTORY_SCORE && newScore >= VICTORY_SCORE) {
+          triggerVictory();
+        }
+      }
+
+      function reset() {
+        resumeAudio();
+        stopFailBGM();
+        stopMainBGM();
+        const cx = Math.floor(COLS / 2);
+        const cy = Math.floor(ROWS / 2);
+        snake = [
+          { x: cx, y: cy },
+          { x: cx - 1, y: cy },
+          { x: cx - 2, y: cy },
+          { x: cx - 3, y: cy },
+        ];
+        dir = "right";
+        nextDir = "right";
+        score = 0;
+        alive = true;
+        paused = false;
+        acc = 0;
+        obstacles = new Set();
+        bosses = [];
+        foods = new Set();
+        yellowFoods = new Set();
+        obstacleWave = 0;
+        won = false;
+        const fc = emptyCell();
+        if (fc) foods.add(keyStr(fc.x, fc.y));
+        bgmStep = 0;
+        updateHud();
+        overlay.classList.remove("visible");
+        if (victoryOverlay) {
+          victoryOverlay.classList.remove("visible");
+          victoryOverlay.setAttribute("aria-hidden", "true");
+        }
+        lastTs = performance.now();
+        restartMainBGM();
+      }
+
+      function keyToDir(key) {
+        switch (key) {
+          case "ArrowUp":
+          case "w":
+          case "W":
+            return "up";
+          case "ArrowDown":
+          case "s":
+          case "S":
+            return "down";
+          case "ArrowLeft":
+          case "a":
+          case "A":
+            return "left";
+          case "ArrowRight":
+          case "d":
+          case "D":
+            return "right";
+          default:
+            return null;
+        }
+      }
+
+      function onKeyDown(e) {
+        resumeAudio();
+        if (e.key === "r" || e.key === "R") {
+          e.preventDefault();
+          reset();
+          return;
+        }
+        if (won) return;
+        if (e.key === " " || e.code === "Space") {
+          e.preventDefault();
+          if (!alive) return;
+          paused = !paused;
+          lastTs = performance.now();
+          acc = 0;
+          if (paused) {
+            stopMainBGM();
+          } else {
+            restartMainBGM();
+          }
+          return;
+        }
+        if (paused) return;
+        const k = keyToDir(e.key);
+        if (k) {
+          e.preventDefault();
+          if (opposite[k] !== dir) nextDir = k;
+        }
+      }
+
+      function gameOver() {
+        if (!alive || won) return;
+        alive = false;
+        paused = false;
+        stopMainBGM();
+        playDie();
+        startFailBGM();
+        finalScoreEl.textContent = String(score);
+        overlay.classList.add("visible");
+      }
+
+      function step() {
+        if (won) return;
+        dir = nextDir;
+        const head = snake[0];
+        const dPlayer = vecFromDir(dir);
+        const nx = head.x + dPlayer.x;
+        const ny = head.y + dPlayer.y;
+
+        if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) {
+          gameOver();
+          return;
+        }
+        if (obstacles.has(keyStr(nx, ny))) {
+          gameOver();
+          return;
+        }
+
+        const foodsList = allFoodCoordsForBoss();
+
+        const bossNext = [];
+        for (let bi = 0; bi < bosses.length; bi++) {
+          const b = bosses[bi];
+          const blocked = new Set();
+          for (let bj = 0; bj < bosses.length; bj++) {
+            if (bj === bi) continue;
+            const segs = bosses[bj].segments;
+            for (let s = 0; s < segs.length; s++) {
+              blocked.add(keyStr(segs[s].x, segs[s].y));
+            }
+          }
+
+          let moveAcc = typeof b.moveAcc === "number" ? b.moveAcc : 0;
+          if (b.type === 4) {
+            moveAcc += BOSS4_STEP_FRAC;
+            if (moveAcc < 1) {
+              bossNext.push({
+                segments: cloneBossSegments(b.segments),
+                dir: b.dir,
+                ateRed: false,
+                ateYellow: false,
+                moveAcc: moveAcc,
+              });
+              continue;
+            }
+            moveAcc -= 1;
+          }
+
+          let dirs = validBossDirs(b, blocked);
+          let pick = pickBossDir(b, dirs, foodsList);
+          if (pick === null) {
+            pick = emergencyBossDir(b);
+          }
+          const applied = applyBossDir(b, pick);
+          applied.moveAcc = b.type === 4 ? moveAcc : 0;
+          bossNext.push(applied);
+        }
+
+        let killedBossIndex = -1;
+        for (let i = 0; i < bossNext.length; i++) {
+          const bh = bossNext[i].segments[0];
+          if (bh.x === nx && bh.y === ny) {
+            const uB = vecFromDir(bossNext[i].dir);
+            if (dPlayer.x === -uB.x && dPlayer.y === -uB.y) {
+              gameOver();
+              return;
+            }
+            killedBossIndex = i;
+            break;
+          }
+        }
+
+        const keyNext = keyStr(nx, ny);
+        const willEatRed = foods.has(keyNext);
+        const willEatYellow = yellowFoods.has(keyNext);
+        const willEatFoodStart = willEatRed || willEatYellow;
+        let playerPreview = [{ x: nx, y: ny }].concat(snake);
+        if (!willEatFoodStart) playerPreview.pop();
+        const playerBodyKeys = new Set();
+        for (let j = 1; j < playerPreview.length; j++) {
+          playerBodyKeys.add(keyStr(playerPreview[j].x, playerPreview[j].y));
+        }
+
+        const deadByBody = new Set();
+        for (let i = 0; i < bossNext.length; i++) {
+          if (i === killedBossIndex) continue;
+          const bh = bossNext[i].segments[0];
+          if (bh.x === nx && bh.y === ny) continue;
+          if (playerBodyKeys.has(keyStr(bh.x, bh.y))) {
+            deadByBody.add(i);
+          }
+        }
+
+        if (killedBossIndex < 0) {
+          for (let i = 0; i < bossNext.length; i++) {
+            if (deadByBody.has(i)) {
+              const segs = bosses[i].segments;
+              for (let k = 1; k < segs.length; k++) {
+                if (segs[k].x === nx && segs[k].y === ny) {
+                  gameOver();
+                  return;
+                }
+              }
+            } else {
+              const segs = bossNext[i].segments;
+              for (let k = 1; k < segs.length; k++) {
+                if (segs[k].x === nx && segs[k].y === ny) {
+                  gameOver();
+                  return;
+                }
+              }
+            }
+          }
+        }
+
+        const growFromBossSide = killedBossIndex >= 0;
+        const grow = willEatFoodStart || growFromBossSide;
+        const bodyCheck = grow ? snake : snake.slice(0, -1);
+        for (let i = 0; i < bodyCheck.length; i++) {
+          if (bodyCheck[i].x === nx && bodyCheck[i].y === ny) {
+            gameOver();
+            return;
+          }
+        }
+
+        let newSnake = [{ x: nx, y: ny }].concat(snake);
+        let tailPops = 1;
+        if (willEatRed) tailPops -= 1;
+        if (willEatYellow) tailPops -= 2;
+        if (growFromBossSide) tailPops -= 1;
+        if (tailPops > 0) {
+          for (let tp = 0; tp < tailPops; tp++) {
+            newSnake.pop();
+          }
+        } else if (tailPops < 0) {
+          for (let tp = 0; tp < -tailPops; tp++) {
+            const tl = newSnake[newSnake.length - 1];
+            newSnake.push({ x: tl.x, y: tl.y });
+          }
+        }
+
+        for (let i = 0; i < bossNext.length; i++) {
+          if (i === killedBossIndex || deadByBody.has(i)) continue;
+          const bh = bossNext[i].segments[0];
+          for (let j = 1; j < newSnake.length; j++) {
+            if (newSnake[j].x === bh.x && newSnake[j].y === bh.y) {
+              gameOver();
+              return;
+            }
+          }
+        }
+
+        for (let i = 0; i < bossNext.length; i++) {
+          if (i === killedBossIndex || deadByBody.has(i)) continue;
+          const bn = bossNext[i];
+          if (bn.ateRed || bn.ateYellow) {
+            const h = bn.segments[0];
+            const hk = keyStr(h.x, h.y);
+            if (bn.ateRed) {
+              foods.delete(hk);
+              addFoodAtRandomEmpty();
+            }
+            if (bn.ateYellow) {
+              yellowFoods.delete(hk);
+            }
+          }
+        }
+
+        if (killedBossIndex >= 0) {
+          const dead = bosses[killedBossIndex];
+          for (let k = 1; k < dead.segments.length; k++) {
+            const c = dead.segments[k];
+            foods.add(keyStr(c.x, c.y));
+          }
+        }
+
+        deadByBody.forEach(function (i) {
+          const dead = bosses[i];
+          for (let k = 0; k < dead.segments.length; k++) {
+            const c = dead.segments[k];
+            foods.add(keyStr(c.x, c.y));
+          }
+        });
+
+        const newBossesArr = [];
+        for (let i = 0; i < bossNext.length; i++) {
+          if (i === killedBossIndex || deadByBody.has(i)) continue;
+          const bn = bossNext[i];
+          const src = bosses[i];
+          newBossesArr.push({
+            segments: bn.segments,
+            dir: bn.dir,
+            type: src.type,
+            moveAcc: typeof bn.moveAcc === "number" ? bn.moveAcc : 0,
+          });
+        }
+        bosses = newBossesArr;
+
+        const plEatRed = willEatRed;
+        const plEatYellow = willEatYellow;
+        const plEat = plEatRed || plEatYellow;
+        if (plEatRed) {
+          foods.delete(keyNext);
+        }
+        if (plEatYellow) {
+          yellowFoods.delete(keyNext);
+        }
+
+        snake = newSnake;
+
+        if (plEatRed) {
+          const prevLevel = getLevel(score);
+          const prevScore = score;
+          score += 1;
+          playEat();
+          const newLevel = getLevel(score);
+          if (newLevel > prevLevel) {
+            playUpgrade();
+            syncBgmToLevel();
+            triggerCaterpillarFlash();
+          }
+          if (score % OBSTACLE_EVERY === 0) {
+            obstacleWave += 1;
+            const nObs = ((obstacleWave - 1) % 4) + 1;
+            addObstacleBatch(nObs);
+            playReward();
+          }
+          trySpawnBossMilestones(prevScore, score);
+          trySpawnBossWaveMilestones(prevScore, score);
+          tryVictory(prevScore, score);
+          updateHud();
+        }
+
+        if (plEatYellow) {
+          const prevLevelY = getLevel(score);
+          const prevScoreY = score;
+          score += 1;
+          playReward();
+          const newLevelY = getLevel(score);
+          if (newLevelY > prevLevelY) {
+            playUpgrade();
+            syncBgmToLevel();
+            triggerCaterpillarFlash();
+          }
+          trySpawnBossMilestones(prevScoreY, score);
+          trySpawnBossWaveMilestones(prevScoreY, score);
+          tryVictory(prevScoreY, score);
+          updateHud();
+        }
+
+        if (growFromBossSide) {
+          playEat();
+        }
+
+        if (plEat || growFromBossSide || deadByBody.size > 0) {
+          ensureMinFood();
+          if (!plEat) updateHud();
+        }
+
+        maybeSpawnYellow();
+      }
+
+      function gx(cx) {
+        return GRID_OFF + cx * cellW;
+      }
+
+      function gy(cy) {
+        return GRID_OFF + cy * cellH;
+      }
+
+      function drawCell(x, y, fill) {
+        const pad = 1;
+        ctx.fillStyle = fill;
+        ctx.fillRect(
+          gx(x) + pad,
+          gy(y) + pad,
+          cellW - pad * 2,
+          cellH - pad * 2
+        );
+      }
+
+      function drawObstacleCell(x, y) {
+        const pad = 1;
+        const ax = gx(x) + pad;
+        const ay = gy(y) + pad;
+        const aw = cellW - pad * 2;
+        const ah = cellH - pad * 2;
+        ctx.fillStyle = "#3d4a5c";
+        ctx.fillRect(ax, ay, aw, ah);
+        ctx.fillStyle = "#6e7681";
+        ctx.fillRect(ax, ay, aw, ah * 0.35);
+        ctx.strokeStyle = "#1c2433";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(ax + 0.5, ay + 0.5, aw - 1, ah - 1);
+      }
+
+      function draw() {
+        const BG = "#152238";
+        const GRID = "#243652";
+        const innerL = GRID_OFF;
+        const innerT = GRID_OFF;
+        const innerR = GRID_OFF + INNER_PX;
+        const innerB = GRID_OFF + INNER_PX;
+
+        ctx.fillStyle = "#080b10";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#f6f8fa";
+        const spanW = canvas.width - 2 * OUTER_MARGIN;
+        ctx.fillRect(OUTER_MARGIN, OUTER_MARGIN, spanW, BORDER_W);
+        ctx.fillRect(OUTER_MARGIN, innerB, spanW, BORDER_W);
+        ctx.fillRect(OUTER_MARGIN, innerT, BORDER_W, INNER_PX);
+        ctx.fillRect(innerR, innerT, BORDER_W, INNER_PX);
+
+        ctx.fillStyle = BG;
+        ctx.fillRect(innerL, innerT, INNER_PX, INNER_PX);
+
+        ctx.strokeStyle = GRID;
+        ctx.lineWidth = 1;
+        for (let x = 0; x <= COLS; x++) {
+          ctx.beginPath();
+          ctx.moveTo(gx(x), innerT);
+          ctx.lineTo(gx(x), innerB);
+          ctx.stroke();
+        }
+        for (let y = 0; y <= ROWS; y++) {
+          ctx.beginPath();
+          ctx.moveTo(innerL, gy(y));
+          ctx.lineTo(innerR, gy(y));
+          ctx.stroke();
+        }
+
+        obstacles.forEach(function (key) {
+          const p = key.split(",");
+          drawObstacleCell(+p[0], +p[1]);
+        });
+
+        yellowFoods.forEach(function (key) {
+          const p = key.split(",");
+          drawCell(+p[0], +p[1], "#e3b341");
+        });
+
+        foods.forEach(function (key) {
+          const p = key.split(",");
+          drawCell(+p[0], +p[1], "#f85149");
+        });
+
+        for (let b = 0; b < bosses.length; b++) {
+          const segs = bosses[b].segments;
+          const pal = BOSS_COLORS[bosses[b].type] || BOSS_COLORS[1];
+          for (let i = segs.length - 1; i >= 0; i--) {
+            drawCell(segs[i].x, segs[i].y, i === 0 ? pal.head : pal.body);
+          }
+        }
+
+        for (let i = snake.length - 1; i >= 0; i--) {
+          const seg = snake[i];
+          const isHead = i === 0;
+          drawCell(
+            seg.x,
+            seg.y,
+            isHead ? "#3fb950" : "#238636"
+          );
+        }
+
+        if (paused && alive && !won) {
+          ctx.save();
+          ctx.font = "600 14px system-ui, sans-serif";
+          ctx.textAlign = "right";
+          ctx.textBaseline = "top";
+          ctx.fillStyle = "rgba(255, 210, 100, 0.95)";
+          ctx.fillText(
+            "已暂停 · 空格继续",
+            innerR - 10,
+            innerT + 8
+          );
+          ctx.restore();
+        }
+      }
+
+      function loop(ts) {
+        rafId = requestAnimationFrame(loop);
+        if (!alive) {
+          draw();
+          return;
+        }
+        if (won) {
+          lastTs = ts;
+          draw();
+          return;
+        }
+        if (paused) {
+          lastTs = ts;
+          draw();
+          return;
+        }
+        const dt = ts - lastTs;
+        lastTs = ts;
+        acc += dt;
+        while (alive && !won && acc >= tickMsNow()) {
+          acc -= tickMsNow();
+          step();
+        }
+        draw();
+      }
+
+      document.addEventListener("keydown", onKeyDown);
+      restartBtn.addEventListener("click", function () {
+        resumeAudio();
+        reset();
+      });
+
+      initAudio();
+      reset();
+      rafId = requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
